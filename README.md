@@ -1,2 +1,2 @@
 # appclasificacion
-App de clasificació2n
+App de clasificación
