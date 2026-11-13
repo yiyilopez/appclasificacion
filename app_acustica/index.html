@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio acústico de vigas</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #1d2925;
+  --muted: #50625a;
+  --line: #d5dfd7;
+  --primary: #19543f;
+  --surface: #fff;
+  --background: #f3f6f1;
+  --accent: #e6efe7;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--background); color: var(--ink); font: 16px/1.55 Inter, system-ui, sans-serif; }
+header { background: var(--surface); border-bottom: 1px solid var(--line); }
+.shell { width: min(100% - 32px, 800px); margin-inline: auto; }
+h1, h2, h3, p { margin: 0; }
+h1 { padding-top: 20px; font-size: 20px; font-weight: 720; letter-spacing: -.025em; }
+h2 { font-size: clamp(27px, 5vw, 39px); line-height: 1.15; letter-spacing: -.045em; }
+h3 { font-size: 20px; line-height: 1.3; }
+nav { display: flex; gap: clamp(15px, 4vw, 32px); margin-top: 13px; }
+nav a { color: var(--muted); text-decoration: none; padding-block: 8px 11px; border-bottom: 3px solid transparent; font-weight: 600; }
+nav a[aria-current] { color: var(--primary); border-color: var(--primary); }
+nav .count { margin-left: 4px; font: 12px IBM Plex Mono, monospace; }
+main { padding-block: 32px 56px; }
+.panel-intro { color: var(--muted); margin: 7px 0 21px; }
+.card { padding: clamp(16px, 4vw, 28px); border: 1px solid var(--line); background: var(--surface); border-radius: 14px; }
+.card + .card { margin-top: 14px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+button, .button, input, select { font: inherit; }
+button, .button { display: inline-block; border: 1px solid var(--primary); border-radius: 8px; padding: 8px 13px; background: var(--primary); color: #fff; font-weight: 650; cursor: pointer; text-decoration: none; }
+button.secondary, .button.secondary { color: var(--primary); background: var(--surface); }
+button:disabled { opacity: .6; cursor: wait; }
+a, summary { color: var(--primary); font-weight: 650; }
+:focus-visible { outline: 3px solid #9b591b; outline-offset: 3px; }
+section:focus, article:focus, .result:focus { outline: none; }
+label { display: block; font-size: 14px; font-weight: 650; margin-bottom: 4px; }
+input, select { color: var(--ink); border: 1px solid #aebfb3; border-radius: 6px; background: white; padding: 6px 8px; max-width: 100%; }
+.file-name, .note, .status { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.note, .status { margin-top: 8px; }
+.status:empty { display: none; }
+.error { color: #962b1e; }
+.file-select { min-width: 0; margin-bottom: 13px; }
+.metrics { margin: 14px 0 8px; display: flex; flex-wrap: wrap; gap: 12px 26px; }
+.metrics div { flex: 1 1 125px; }
+.metrics dt { font-size: 13px; color: var(--muted); }
+.metrics dd { margin: 3px 0 0; font-size: clamp(21px, 4vw, 31px); font-weight: 730; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.warnings { margin: 10px 0 0; padding-left: 20px; color: #814817; font-size: 14px; }
+.save-bar { margin-top: 17px; padding-top: 14px; border-top: 1px solid var(--line); }
+.save-bar input { width: 96px; }
+.save-bar .actions { align-items: end; }
+details { margin-top: 14px; }
+summary { cursor: pointer; }
+audio { display: block; width: min(100%, 360px); margin-block: 10px; }
+canvas { display: block; width: 100%; height: 235px; margin-block: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { padding-left: 0; }
+.row-label { overflow-wrap: anywhere; }
+.series-table { table-layout: fixed; margin-block: 12px; }
+.series-table input { width: 100%; min-width: 0; }
+.series-table .secondary { padding: 4px 6px; font-size: 13px; }
+.series-table th:last-child { width: 56px; }
+.series-table th:nth-child(2), .series-table th:nth-child(3) { width: 23%; }
+.series-actions { margin-top: 13px; }
+.result { margin-top: 14px; }
+.result-hero { background: var(--accent); border-color: #cbdcd0; }
+.result .reading { margin: 6px 0 0; font-size: 18px; }
+.result .prediction { margin-top: 10px; }
+.result .endpoints { margin-top: 10px; }
+.chart-key { font-size: 14px; color: var(--muted); margin: 10px 0 0; }
+#example-cta { margin-top: 17px; }
+@media (max-width: 460px) {
+  nav a { font-size: 14px; }
+  .metrics { gap: 8px 18px; }
+  main { padding-top: 24px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="shell">
+    <h1>Laboratorio acústico de vigas</h1>
+    <nav aria-label="Herramientas">
+      <a href="#audio" data-view="audio" aria-current="page">Analizar audio</a>
+      <a href="#serie" data-view="serie">Comparar longitudes<span id="series-count" class="count" hidden></span></a>
+      <a href="#ejemplo" data-view="ejemplo">Ejemplo</a>
+    </nav>
+  </div>
+</header>
+<main class="shell">
+  <section id="audio" aria-labelledby="audio-title" tabindex="-1">
+    <h2 id="audio-title">Analiza una grabación</h2>
+    <p class="panel-intro">Mide la frecuencia y la duración del sonido de una viga al flexionarla y soltarla.</p>
+    <div class="card">
+        <label for="file">Archivo WAV</label>
+        <div class="actions file-select">
+          <input id="file" type="file" accept=".wav,.wave,audio/wav,audio/x-wav" hidden>
+          <button type="button" id="choose-file" class="secondary" aria-describedby="file-name">Seleccionar archivo</button>
+          <span id="file-name" class="file-name" aria-live="polite">Ningún archivo seleccionado</span>
+        </div>
+        <p class="note">Hasta 60 s y 24 MiB. Deja un segundo de silencio antes y después de cada liberación.</p>
+      <p id="status" class="status" role="status"></p>
+    </div>
+    <article class="card" id="results" aria-labelledby="result-title" tabindex="-1" hidden>
+      <h3 id="result-title">Resultado del audio</h3>
+      <dl class="metrics">
+        <div><dt>Frecuencia dominante</dt><dd id="hz">—</dd></div>
+        <div><dt>Duración D90</dt><dd id="duration">—</dd></div>
+        <div><dt>Longitud de onda en aire</dt><dd id="wavelength">—</dd></div>
+      </dl>
+      <p id="quality" class="note"></p>
+      <ul id="warnings" class="warnings" hidden></ul>
+      <div class="save-bar" id="add-result" hidden>
+        <div class="actions">
+          <div><label for="measured-length">Longitud libre (cm)</label><input id="measured-length" inputmode="decimal" placeholder="Ej. 5"></div>
+          <button type="button" id="save-point">Guardar en mi serie</button>
+        </div>
+        <p id="save-status" class="status" role="status"></p>
+        <a id="open-series" href="#serie" hidden>Ver mi serie</a>
+      </div>
+      <details id="audio-details">
+        <summary>Escuchar y revisar los picos</summary>
+        <audio id="player" controls hidden></audio>
+        <canvas id="spectrum" role="img" aria-label="Espectro de potencia relativa frente a la frecuencia"></canvas>
+        <table><thead><tr><th scope="col">Pico</th><th scope="col">Sobre el fondo</th><th scope="col">Pulsos</th></tr></thead><tbody id="peaks"></tbody></table>
+        <div id="peak-picker" hidden>
+          <label for="result-peak">Pico que vas a guardar en la serie</label>
+          <select id="result-peak"></select>
+        </div>
+        <p class="note">D90 mide el tiempo que concentra el 90 % central de la energía analizada. La longitud de onda se estima como 343 m/s divididos por la frecuencia.</p>
+      </details>
+    </article>
+  </section>
+
+  <section id="serie" aria-labelledby="series-title" tabindex="-1" hidden>
+    <h2 id="series-title">Compara longitudes</h2>
+    <p class="panel-intro">Usa al menos cuatro longitudes libres de la misma viga. Mide desde el apoyo hasta la punta. Procura seguir el mismo pico de vibración.</p>
+    <div class="card">
+      <h3>Mis mediciones</h3>
+      <p id="empty-series" class="note">Guarda una frecuencia desde <a href="#audio">Analizar audio</a> o agrégala aquí si ya la conoces.</p>
+      <div id="series-points" hidden>
+        <table class="series-table"><thead><tr><th scope="col">Toma</th><th scope="col">L (cm)</th><th scope="col">f (Hz)</th><th scope="col"><span aria-label="Acciones"></span></th></tr></thead><tbody id="point-rows"></tbody></table>
+        <p id="series-progress" class="note"></p>
+      </div>
+      <div class="actions series-actions">
+        <button type="button" id="compare-series" hidden>Comparar frecuencias</button>
+        <button type="button" id="add-row" class="secondary">Agregar medición</button>
+      </div>
+      <p class="status" id="series-status" role="status"></p>
+    </div>
+    <div id="series-result"></div>
+  </section>
+
+  <section id="ejemplo" aria-labelledby="example-title" tabindex="-1" hidden>
+    <h2 id="example-title">Una viga de madera</h2>
+    <p class="panel-intro">Probeta MD03 del laboratorio. Se midió la vibración con cinco longitudes libres, de 5 a 9 cm.</p>
+    <p id="example-status" class="status" role="status"></p>
+    <div id="example-result"></div>
+    <a class="button secondary" id="example-cta" href="#audio" hidden>Analizar mi audio</a>
+  </section>
+
+  <template id="comparison-template">
+    <article class="result" tabindex="-1">
+      <div class="card result-hero">
+        <h3 class="verdict"></h3>
+        <p class="reading"></p>
+        <p class="prediction"></p>
+        <p class="endpoints"></p>
+      </div>
+      <details class="card">
+        <summary>Ver gráfica y comparación de modelos</summary>
+        <p class="chart-key"></p>
+        <canvas role="img" aria-label="Frecuencias registradas y curva del modelo con menor error frente a la longitud libre"></canvas>
+        <table><thead><tr><th scope="col">Modelo</th><th scope="col">Error de predicción</th></tr></thead><tbody></tbody></table>
+        <p class="note">Se predice una longitud por vez con las mediciones restantes. La app llama «cerca de −2» a una diferencia de 0,20 o menos, como guía de lectura.</p>
+      </details>
+    </article>
+  </template>
+</main>
+<script src="series.js" defer></script>
+</body>
+</html>
